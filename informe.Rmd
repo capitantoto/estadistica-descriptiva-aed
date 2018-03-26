@@ -1,0 +1,72 @@
+---
+title: "Estadistica Descriptiva"
+author: "Gonzalo & Octavio"
+date: "March 26, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Preparación del entorno
+```{r entorno}
+library(tidyverse)
+datos <- read_delim("estad_descriptiva.txt", delim = "\t",col_names = T)
+
+datos %>%
+  gather(key='dieta', value = 'valor') %>%
+  mutate(dieta=substr(dieta, 6,6)) -> df
+
+rango_deseable <- c(80, 110)
+```
+
+Comienzo calculando la media, mediana y medias $\alpha-podada$ para $\alpha = 0.1,0.2$ 
+
+```{r medidas_centrales}
+df %>%
+  group_by(dieta) %>%
+  summarise(
+    media = mean(valor),
+    mediana = median(valor),
+    media_1 = mean(valor, trim = 0.1),
+    media_2 = mean(valor, 0.2),
+    stdev = sd(valor),
+    iqr = IQR(valor),
+    q10 = quantile(valor, 0.10),
+    q25 = quantile(valor, 0.25),
+    q50 = quantile(valor, 0.50),
+    q75 = quantile(valor, 0.75),
+    q90 = quantile(valor, 0.90),
+    n_deseable = sum(valor > 80 & valor < 110),
+    frac_deseable = n_deseable / n() 
+    ) -> descriptivos
+```
+
+Veamos:
+```{r}
+descriptivos
+```
+
+Las medias alfa-podadas para la dieta "C" son muy distintas a la media sin podar: es probable que haya valores extremos presentes en la muestra de dicha dieta.
+
+```{r histogramas}
+df %>% ggplot(mapping= aes(x = valor)) +
+  geom_histogram(bins=50) +
+  facet_grid(dieta ~ .)
+```
+
+```{r histogramas2}
+df %>% 
+  filter(valor<300) %>% 
+  ggplot(mapping= aes(x = valor)) +
+  geom_histogram(bins=20) +
+  facet_grid(dieta ~ .)
+```
+
+```{r}
+df %>%
+  filter(valor < 1000) %>%
+  ggplot(mapping= aes(dieta, valor)) +
+  geom_boxplot()
+```
